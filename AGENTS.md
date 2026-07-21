@@ -10,13 +10,13 @@
 
 每轮结束前按顺序做：
 
-1. 更新下方 **§2 当前状态**（阶段、完成项、阻塞）
-2. 在 **§8 变更日志** 顶部追加一条（日期 + 设备名/备注 + 做了什么）
-3. 重写 **§3 下一步**（另一台设备打开就能接着干）
-4. 若约定有变，同步改 **§1 / §4 / §5 / §6 / §6.1**
-5. 提醒用户：`git add AGENTS.md && git commit && git push`（若已用远程）
+1. 更新 **§2 当前状态**（阶段、完成项、阻塞）
+2. 重写 **§3 下一步**
+3. 约定有变时改 **§1 / §4–§6**
+4. **§8 项目日志**：只记里程碑（过验收、重要架构定稿、环境冒烟成败）；**不要**为改文档措辞、依赖微调等琐事追加日志
+5. 提醒用户：`git add` / `commit` / `push`（若已用远程）
 
-用户换设备后，新 Agent **先读本文档再动手**，不要凭空假设进度。
+用户换设备后，新 Agent **先读本文档再动手**。
 
 ---
 
@@ -47,8 +47,8 @@
 
 | 设备 | 路径 / 环境（按实机填写） |
 |------|---------------------------|
-| 设备 A | 项目 `D:\BossMind`；Python `C:/Users/22930/.conda/envs/BossMind/python.exe`（3.11.x）— 写代码/无 HK 单测 |
-| 设备 B | OS：**Windows 10/11**；GPU：**RX 7900 XT**；项目路径：（填写，建议 `D:\BossMind`）；Windows conda/venv：（填写）；WSL 训练见 **§6.1** |
+| 设备 A | 项目 `D:\BossMind`；Python `C:/Users/22930/.conda/envs/BossMind/python.exe`（**已确认 3.12.13**）— 写代码/无 HK 单测 |
+| 设备 B | OS：**Windows 10/11**；GPU：**RX 7900 XT**；项目路径：（填写）；Windows conda：**Python 3.12**；WSL 训练见 **§6.1** |
 
 **同步原则**：源码与 `AGENTS.md` 走 Git，两边都 pull 再写、写完就 push。`data/`、`artifacts/ckpt/` 默认留在设备 B（或 LFS/网盘）；设备 A 一般不存大体积轨迹/权重。
 
@@ -60,9 +60,9 @@
 |------|-----|
 | 当前阶段 | **Phase 0 — 真环境探针** |
 | 当前子课 | **第 1 课：附加进程（probe_attach）** — 验收应在 **设备 B** 完成 |
-| 完成度 | 两边交替开发；当前仓库在 A 侧有骨架与练习版 `probe_attach.py`（`pycharm64.exe`）；HK/训练相关验收须在 B 完成，尚未记录 |
+| 完成度 | 两边交替开发；当前仓库在 A 侧有骨架与练习版 `probe_attach.py`（`pycharm64.exe`）；HK/训练相关验收须在 B 完成，尚未记录；设备 A 已配 Cursor `.vscode`（本地，已 gitignore） |
 | 阻塞 / 风险 | A/B 都可写代码，但 Phase 0 游戏探针与训练冒烟的**验收只在 B**；B 需按 §6.1 配齐 Windows 游戏栈 + WSL 训练栈 |
-| 活跃设备备注 | （填写：设备 A / 设备 B） |
+| 活跃设备备注 | 设备 A（路径与 Python 已确认；解释器 `C:/Users/22930/.conda/envs/BossMind/python.exe`） |
 | 最后更新 | 2026-07-21 |
 
 ### 完成清单（勾选）
@@ -76,7 +76,7 @@
 
 - [ ] Win10/11 + 管理员权限可用
 - [ ] Steam 空洞骑士安装，版本锁定（关自动更新），进程名已记入 `configs/game_version.yaml`
-- [ ] Conda/venv：Python 3.11 + `pymem` 等（`requirements.txt`）
+- [x] Conda/venv：**Python 3.12** + `pip install -r requirements.txt`（设备 A 已装，2026-07-21）
 - [ ] `probe_attach.py` 对 **HK 进程** 开着成功、关掉失败
 - [ ] 读 HP / 按键 / 重置×10 / `results/phase0.md`
 
@@ -85,8 +85,7 @@
 - [ ] Adrenalin（文档指定的 WSL2 版本）已装并重启
 - [ ] WSL2 + Ubuntu 22.04 或 24.04
 - [ ] ROCm + PyTorch（ROCm wheel）冒烟通过（见 §6.1）
-- [ ] 项目路径在 WSL 可访问（如 `/mnt/d/BossMind`）
-- [ ] `requirements-train.txt` 与 Windows 侧 `requirements.txt` 分离
+- [ ] 项目路径在 WSL 可访问（如 `/mnt/d/BossMind`）；训练热数据用 ext4 缓存（§6.1）
 
 **Phase 1+**（未开始）
 
@@ -135,19 +134,16 @@ Phase 2–5 逻辑 → A 或 B 都可写；凡需 HK/GPU 的跑通与出数 → 
 BossMind\
   AGENTS.md
   README.md
-  requirements.txt           # 设备 B · Windows：pymem / 采集 / 局内
-  requirements-train.txt     # 设备 B · WSL：torch(ROCm) 等
+  requirements.txt           # 统一依赖（按功能分区注释）；Python 3.12
   configs\game_version.yaml
-  src\bossmind\env\          # memory / input / session
+  src\bossmind\env\
   scripts\probe_attach.py
-  data\
-    raw\<batch_id>\          # Windows 采集源（事实源）
-    processed\<dataset_id>\  # 对齐后的训练样本索引
-  artifacts\
-    published\               # 发布给 Windows 评估的完整推理包
+  data\raw\  data\processed\
+  artifacts\published\
   results\
 ```
 
+WSL ext4 训练缓存：`~/bossmind-train/`（见 §6.2）。Python：**3.12**。
 WSL ext4 训练缓存（可删除重建，见 §6.2）：
 
 ```text
@@ -199,7 +195,7 @@ WSL ext4 训练缓存（可删除重建，见 §6.2）：
 ┌──────────────────────── 设备 B = Windows 11/10 ────────────────────────┐
 │                                                                        │
 │  【栈 1 · 游戏运行时】Windows 原生                                      │
-│    Steam HK · conda/venv Python3.11 · pymem · 按键 · 采集 · 评估         │
+│    Steam HK · conda/venv Python3.12 · pymem · 按键 · 采集 · 评估         │
 │    写 data/raw/ · 读 artifacts/published/                              │
 │                                                                        │
 │  【栈 2 · GPU 训练】WSL2 Ubuntu · ext4 训练缓存                          │
@@ -370,11 +366,9 @@ WSL ext4             = 训练热数据（图副本 + 预计算特征）
    - 准备 Boss 前手动存档，供后续重置协议使用。  
 
 4. **Python（Windows）**  
-   - Miniconda/Anaconda 或 venv，**Python 3.11**。  
-   - 创建 env 例如：`conda create -n BossMind python=3.11`。  
-   - 仅装 Windows 侧依赖（写入 `requirements.txt`），例如：  
-     `pymem`、`pydantic`、`pyyaml`、`pydirectinput`（或 `vgamepad`）等。  
-   - **不要**在这个 Windows env 里装 CUDA 版 PyTorch；训练用栈 2。  
+   - **Python 3.12**：`conda create -n BossMind python=3.12`  
+   - `pip install -r requirements.txt`  
+   - **不要**在 Windows env 装 CUDA 版 PyTorch；WSL 训 BC 时再按文件头注释装 ROCm torch。  
 
 5. **Phase 0 验收命令（在 B 的 Windows 终端）**  
 
@@ -432,10 +426,10 @@ mkdir -p ~/bossmind-train/{data,artifacts/runs}
 
 训练脚本 `--data-dir ~/bossmind-train/data`；**不要**让 DataLoader 每个 epoch 扫 `/mnt/d/.../data`。
 
-6. **依赖分离**  
-   - Windows：`requirements.txt`（或 `requirements-win.txt`）— pymem、采集、评估  
-   - WSL：`requirements-train.txt` — torch(ROCm)、训练依赖  
-   - 设备 A：写代码为主，通常不必装 ROCm  
+6. **依赖**  
+   - 统一：`requirements.txt`（功能分区注释）  
+   - WSL 另装 ROCm 版 `torch`（见 requirements 文件头）  
+   - 设备 A 写代码为主，通常不必装 ROCm / 全套游戏依赖  
 
 ---
 
@@ -490,51 +484,24 @@ mkdir -p ~/bossmind-train/{data,artifacts/runs}
 
 ---
 
-## 8. 变更日志（新条目写在最上面）
+## 8. 项目日志（仅里程碑）
 
-### 2026-07-21 — §6.2 内存+CNN 最终训练配置策略
+> 只记：阶段验收通过/失败、架构定稿、环境冒烟结果、求职向交付物。  
+> **不要**记录：文档措辞修改、依赖文件整理、重复澄清分工等。
 
-- 明确双流采集（高频内存 + 低频 ROI）、因果对齐、BC 输入为 mem+embedding+probs  
-- 三档配置：纯内存 BC / +CNN / 正式预计算特征训练  
-- 完整流水线 ①–⑧ 与 DataLoader、目录布局写入文档  
+### 2026-07-21
 
-### 2026-07-21 — 设备 B 训练数据流优化（WSL I/O）
-
-- 问题：`/mnt/d` 跨边界 I/O 慢，多 epoch DataLoader 重复读会拖训练  
-- 方案：Windows 存 `data/raw` + `artifacts/published`；WSL ext4 存训练缓存与临时 ckpt；manifest + 增量同步；仅发布权重回 Windows  
-- §6.1 架构图与日常工作流已更新  
-
-### 2026-07-21 — 主力机共存约束
-
-- 明确设备 B 为日常主力机（含其他游戏）  
-- §6.1 增加共存原则：训练与游戏错峰、锁驱动、按需开工具、`wsl --shutdown`、ROCm 可推迟到 Phase 1  
-
-### 2026-07-21 — 再次澄清：交替开发 + 能力不对称
-
-- **A 与 B 都可以写代码**（交替开发，Git 同步）  
-- **A**：只写代码（及无游戏单测），不作 HK/训练正式验收  
-- **B**：写代码 + Windows 跑游戏/采集/评估 + WSL2+ROCm 训练  
-- 已改正「只有 A 写代码、B 不写代码」的误解  
-
-### 2026-07-21 — 纠正双设备分工 + B 机 Windows 全栈方案
-
-- 曾写：A 只写代码、B 负责运行+训练（未强调 B 也可写代码）  
-- §6.1 Windows+WSL 方案仍有效  
-
-### 2026-07-21 — 曾写入错误的 A/B 分工（已废止）
-
-- 旧：A 游戏采集、B 只训练 — **作废，以本条上一节为准**  
-
-### 2026-07-21 — 初始化交接提纲
-
-- 项目定位、Phase 地图、协作约定首版  
+- 交接文档 `AGENTS.md` 初版；A/B 交替开发 + B 机 Windows/WSL 定稿  
+- 训练数据流：Windows 源数据 + WSL ext4 缓存 + published 回传；内存+CNN 双流协议写入 §6.2  
+- 依赖合并为单一 `requirements.txt`，锁定 **Python 3.12**  
+- 当前进度：Phase 0 第 1 课（probe_attach）；HK 正式验收待设备 B  
 
 ---
 
 ## 9. 交接检查清单（换设备前）
 
-- [ ] §2 / §3 / §8 已更新  
+- [ ] §2 / §3 已更新；若有里程碑则更新 §8  
 - [ ] 代码已 commit + push  
 - [ ] 设备 A/B 路径已填入 §1  
-- [ ] 大文件 `data/`、`ckpt/` 在 B 上或有网盘副本（不必强行同步到 A）  
+- [ ] 大文件 `data/`、`ckpt/` 在 B 上或有网盘副本  
 - [ ] 若动过驱动/ROCm：把冒烟结果写入 §8  
