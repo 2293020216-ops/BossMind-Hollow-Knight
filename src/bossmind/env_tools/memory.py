@@ -1,6 +1,8 @@
 import pymem
 import yaml
+
 from bossmind.paths import GAME_VERSION_FILE
+
 
 def get_pid():
     # 校验配置文件是否存在

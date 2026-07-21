@@ -48,7 +48,7 @@
 | 设备 | 路径 / 环境（按实机填写） |
 |------|---------------------------|
 | 设备 A | 项目 `D:\BossMind`；Python `C:/Users/22930/.conda/envs/BossMind/python.exe`（**已确认 3.12.13**）— 写代码/无 HK 单测 |
-| 设备 B | OS：**Windows 10/11**；GPU：**RX 7900 XT**；项目路径：（填写）；Windows conda：**Python 3.12**；WSL 训练见 **§6.1** |
+| 设备 B | OS：**Windows 10/11**；GPU：**RX 7900 XT**；项目 `E:\BossMind`；Python `C:/Users/22930/.conda/envs/BossMind/python.exe`（**3.12.13**）；WSL 训练见 **§6.1** |
 
 **同步原则**：源码与 `AGENTS.md` 走 Git，两边都 pull 再写、写完就 push。`data/`、`artifacts/ckpt/` 默认留在设备 B（或 LFS/网盘）；设备 A 一般不存大体积轨迹/权重。
 
@@ -60,9 +60,9 @@
 |------|-----|
 | 当前阶段 | **Phase 0 — 真环境探针** |
 | 当前子课 | **第 2 课：读玩家 HP（probe_hp）** |
-| 完成度 | 第 1 课完成：`paths.py` + `env_tools/memory.get_pid()` + `probe_attach`；A 机 PyCharm 冒烟通过；`game_version.yaml` 为 `hollow_knight.exe`；B 机 HK 正式验收与读 HP 待做 |
-| 阻塞 / 风险 | 读 HP 须在 B 机开游戏用 CE/社区偏移；A 机只能写代码不能验真值 |
-| 活跃设备备注 | 设备 A |
+| 完成度 | 第 1 课 **B 机正式验收通过**（开 HK 可获取 PID）；B 机 CE 7.7 已安装，**正在学习 CE 基础操作**（官方教程 1～5 关）；第 2 课读 HP 未开始（`probe_hp.py` / `memory.py` 扩展待写，CE 找偏移待做） |
+| 阻塞 / 风险 | 无硬阻塞；B 需先掌握 CE 扫描/监视再找 HP；`game_version.yaml` 尚无 HP 偏移；A 机不能验真值 |
+| 活跃设备备注 | 设备 B |
 | 最后更新 | 2026-07-21 |
 
 ### 完成清单（勾选）
@@ -74,11 +74,14 @@
 
 **设备 B — Windows 游戏 / 探针栈（Phase 0 运行验收地）**
 
-- [ ] Win10/11 + 管理员权限可用
-- [ ] Steam 空洞骑士安装，版本锁定（关自动更新），进程名已记入 `configs/game_version.yaml`
-- [x] Conda/venv：**Python 3.12** + `pip install -r requirements.txt`（设备 A 已装，2026-07-21）
-- [x] `probe_attach.py` 附加逻辑（A 机 PyCharm 冒烟；**B 机 HK 正式验收待做**）
-- [ ] 读 HP（`probe_hp.py`）— 游戏内掉血数字同步变
+- [x] Win10/11 + 管理员权限可用（B 机 `probe_attach` 已验收）
+- [x] Steam 空洞骑士安装，版本锁定（关自动更新），进程名已记入 `configs/game_version.yaml`
+- [x] Conda/venv：**Python 3.12** + `pip install -r requirements.txt`（A/B 均已装，2026-07-21）
+- [x] Cursor 工作区 Python 解释器 / Ruff / YAML 插件（B 机，2026-07-21）
+- [x] `probe_attach.py` 附加逻辑（A 机 PyCharm 冒烟；**B 机 HK 正式验收通过**，2026-07-21）
+- [x] Cheat Engine 7.7 已安装（B 机；Windows 用 `CheatEngine77.exe` 或 Patreon 版 `CheatEngine77P.exe`）
+- [ ] CE 基础操作熟练（官方教程 ≥1～5 关：附加进程、扫描、地址监视、改值）
+- [ ] 读 HP（CE 找偏移 → `game_version.yaml` → `probe_hp.py`）— 游戏内掉血数字同步变
 - [ ] 按键 / 重置×10 / `results/phase0.md`
 
 **设备 B — GPU 训练栈（可与 Phase 0 并行安装，训练待 Phase 1）**
@@ -105,8 +108,16 @@
 
 | 设备 | 做什么 |
 |------|--------|
-| **A** | 扩展 `memory.py`：`attach()` 保持连接、读 `player_hp`；扩展 `game_version.yaml` 偏移字段；写 `scripts/probe_hp.py` 循环打印 |
-| **B** | 开 HK + Cheat Engine 找 HP 偏移 → 填入 yaml → 跑 `probe_hp` 验收（掉血/回血数字变） |
+| **B（当前）** | **先学 CE**：自带教程 1～5 关（附加进程、First/Next Scan、地址列表、改值）→ 再在 HK 里找 HP 偏移 → Pointer scan → 填入 `game_version.yaml` |
+| **A（可并行）** | 扩展 `memory.py`：`attach()` 保持连接、`read_player_hp()`；扩展 `game_version.yaml` 偏移字段；写 `scripts/probe_hp.py` 循环打印 |
+| **B（偏移就绪后）** | 与 A 联调：跑 `probe_hp` 验收（掉血/回血数字变；关游戏清晰失败） |
+
+**B 机 CE 学习检查点**（做完即可开始找 HP）：
+
+1. 能附加 `hollow_knight.exe`
+2. 会用 4 Bytes 扫描 + Next Scan 缩小候选
+3. 能把地址加到下表，看到数值随游戏变化
+4. 知道 Pointer scan 是下一步（偏移链写 yaml）
 
 **验收**：`python scripts/probe_hp.py` 每秒打印 HP；受伤减少、治疗增加；关游戏清晰失败。
 
@@ -490,8 +501,9 @@ mkdir -p ~/bossmind-train/{data,artifacts/runs}
 ### 2026-07-21
 
 - Phase 0 **第 1 课通过**（A 机）：`paths.py` + `env_tools/memory` + 可配置 `probe_attach`
-- 依赖与 `pyproject.toml` 就绪；Python **3.12**
-- **进行中**：第 2 课读 HP；B 机 HK 正式 probe 验收待做
+- Phase 0 **第 1 课 B 机正式验收通过**：开 HK 运行 `probe_attach` 可获取 PID
+- **设备 B** 环境就绪：`E:\BossMind`、conda 3.12.13、Cursor 工作区配置、**CE 7.7 已安装**
+- **进行中**：B 学习 CE 基础 → 第 2 课找 HP 偏移；`probe_hp` 代码待 A/B 编写
 
 ---
 
