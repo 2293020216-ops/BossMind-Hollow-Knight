@@ -59,10 +59,10 @@
 | 字段 | 值 |
 |------|-----|
 | 当前阶段 | **Phase 0 — 真环境探针** |
-| 当前子课 | **第 1 课：附加进程（probe_attach）** — 验收应在 **设备 B** 完成 |
-| 完成度 | 两边交替开发；当前仓库在 A 侧有骨架与练习版 `probe_attach.py`（`pycharm64.exe`）；HK/训练相关验收须在 B 完成，尚未记录；设备 A 已配 Cursor `.vscode`（本地，已 gitignore） |
-| 阻塞 / 风险 | A/B 都可写代码，但 Phase 0 游戏探针与训练冒烟的**验收只在 B**；B 需按 §6.1 配齐 Windows 游戏栈 + WSL 训练栈 |
-| 活跃设备备注 | 设备 A（路径与 Python 已确认；解释器 `C:/Users/22930/.conda/envs/BossMind/python.exe`） |
+| 当前子课 | **第 2 课：读玩家 HP（probe_hp）** |
+| 完成度 | 第 1 课完成：`paths.py` + `env_tools/memory.get_pid()` + `probe_attach`；A 机 PyCharm 冒烟通过；`game_version.yaml` 为 `hollow_knight.exe`；B 机 HK 正式验收与读 HP 待做 |
+| 阻塞 / 风险 | 读 HP 须在 B 机开游戏用 CE/社区偏移；A 机只能写代码不能验真值 |
+| 活跃设备备注 | 设备 A |
 | 最后更新 | 2026-07-21 |
 
 ### 完成清单（勾选）
@@ -77,8 +77,9 @@
 - [ ] Win10/11 + 管理员权限可用
 - [ ] Steam 空洞骑士安装，版本锁定（关自动更新），进程名已记入 `configs/game_version.yaml`
 - [x] Conda/venv：**Python 3.12** + `pip install -r requirements.txt`（设备 A 已装，2026-07-21）
-- [ ] `probe_attach.py` 对 **HK 进程** 开着成功、关掉失败
-- [ ] 读 HP / 按键 / 重置×10 / `results/phase0.md`
+- [x] `probe_attach.py` 附加逻辑（A 机 PyCharm 冒烟；**B 机 HK 正式验收待做**）
+- [ ] 读 HP（`probe_hp.py`）— 游戏内掉血数字同步变
+- [ ] 按键 / 重置×10 / `results/phase0.md`
 
 **设备 B — GPU 训练栈（可与 Phase 0 并行安装，训练待 Phase 1）**
 
@@ -98,20 +99,20 @@
 
 ## 3. 下一步
 
-**无论当前在 A 还是 B：先 `git pull`，读 §2，再动手；结束更新 §2/§8 并 `push`。**
+**先 `git pull`，读 §2，再动手；结束更新 §2/§3 并 `push`。**
 
-**若在设备 A（可写代码，不能当游戏/训练验收机）：**
+### 第 2 课：读玩家 HP（当前）
 
-1. 继续写/改 Phase 0 相关代码与配置（如可配置进程名的 `probe_attach`）  
-2. 无 HK 的语法检查、纯逻辑单测可在 A 做  
-3. 提醒自己：附加 HK / 读内存 / 重置循环的 **正式验收去 B**  
+| 设备 | 做什么 |
+|------|--------|
+| **A** | 扩展 `memory.py`：`attach()` 保持连接、读 `player_hp`；扩展 `game_version.yaml` 偏移字段；写 `scripts/probe_hp.py` 循环打印 |
+| **B** | 开 HK + Cheat Engine 找 HP 偏移 → 填入 yaml → 跑 `probe_hp` 验收（掉血/回血数字变） |
 
-**若在设备 B（可写代码 + 跑游戏 + 训练）：**
+**验收**：`python scripts/probe_hp.py` 每秒打印 HP；受伤减少、治疗增加；关游戏清晰失败。
 
-1. 按 **§6.1** 配齐：Windows 游戏栈 + WSL2 训练栈  
-2. 用空洞骑士跑通 `probe_attach`（进程名以任务管理器为准）  
-3. 继续 Phase 0：HP → 按键 → 重置×10，并写 `results/phase0.md`  
-4. 同机也可写代码；与 A 交替时靠 Git 对齐  
+**本课不做**：按键、读档、BC、CNN。
+
+**若在 B 且第 2 课已过**：进入第 3 课按键冒烟。
 
 ---
 
@@ -128,31 +129,28 @@ Phase 2–5 逻辑 → A 或 B 都可写；凡需 HK/GPU 的跑通与出数 → 
 
 ---
 
-## 5. 目标目录结构
+## 5. 仓库结构（当前）
 
 ```text
 BossMind\
   AGENTS.md
-  README.md
-  requirements.txt           # 统一依赖（按功能分区注释）；Python 3.12
-  configs\game_version.yaml
-  src\bossmind\env\
-  scripts\probe_attach.py
-  data\raw\  data\processed\
-  artifacts\published\
-  results\
+  pyproject.toml              # pip install -e .
+  requirements.txt            # Python 3.12
+  configs\
+    game_version.yaml         # process_name + 内存偏移（第 2 课起）
+  scripts\
+    probe_attach.py           # 第 1 课：附加进程，打印 pid
+    probe_hp.py               # 第 2 课：循环读 HP（待建）
+  src\bossmind\
+    paths.py                  # PROJECT_ROOT、GAME_VERSION_FILE
+    env_tools\
+      memory.py               # get_pid()；第 2 课扩展读内存
+  data\  artifacts\  results\  # 后续阶段使用
 ```
 
-WSL ext4 训练缓存：`~/bossmind-train/`（见 §6.2）。Python：**3.12**。
-WSL ext4 训练缓存（可删除重建，见 §6.2）：
+**安装**：`pip install -e .` 后 `from bossmind.env_tools.memory import ...`
 
-```text
-~/bossmind-train/
-  data\raw_mirror\           # 从 Windows 增量同步
-  data\cnn_source\           # CNN 训练用图
-  data\features\<vision_id>\ # 预计算 embedding（BC 训练读这里）
-  artifacts\runs\            # 临时 ckpt / 日志
-```
+WSL 训练缓存：`~/bossmind-train/`（见 §6.2，Phase 1 再用）。
 
 ---
 
@@ -491,10 +489,9 @@ mkdir -p ~/bossmind-train/{data,artifacts/runs}
 
 ### 2026-07-21
 
-- 交接文档 `AGENTS.md` 初版；A/B 交替开发 + B 机 Windows/WSL 定稿  
-- 训练数据流：Windows 源数据 + WSL ext4 缓存 + published 回传；内存+CNN 双流协议写入 §6.2  
-- 依赖合并为单一 `requirements.txt`，锁定 **Python 3.12**  
-- 当前进度：Phase 0 第 1 课（probe_attach）；HK 正式验收待设备 B  
+- Phase 0 **第 1 课通过**（A 机）：`paths.py` + `env_tools/memory` + 可配置 `probe_attach`
+- 依赖与 `pyproject.toml` 就绪；Python **3.12**
+- **进行中**：第 2 课读 HP；B 机 HK 正式 probe 验收待做
 
 ---
 
