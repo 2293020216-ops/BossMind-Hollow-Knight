@@ -59,11 +59,11 @@
 | 字段 | 值 |
 |------|-----|
 | 当前阶段 | **Phase 0 — 真环境探针** |
-| 当前子课 | **第 2 课：读玩家 HP（probe_hp）** |
-| 完成度 | 第 1 课 **B 机正式验收通过**（开 HK 可获取 PID）；B 机 CE 7.7 已安装，**正在学习 CE 基础操作**（官方教程 1～5 关）；第 2 课读 HP 未开始（`probe_hp.py` / `memory.py` 扩展待写，CE 找偏移待做） |
-| 阻塞 / 风险 | 无硬阻塞；B 需先掌握 CE 扫描/监视再找 HP；`game_version.yaml` 尚无 HP 偏移；A 机不能验真值 |
-| 活跃设备备注 | 设备 B |
-| 最后更新 | 2026-07-21 |
+| 当前子课 | **第 2 课：读玩家 HP — 待 B 机验收** |
+| 完成度 | A 机代码就绪：`PlayerInfo`（attach/detach/get_pid/get_player_hp）+ `probe_attach` + `probe_hp` + `game_version.yaml` 偏移已填；第 1 课 B 机已通过；**第 2 课 B 机真环境验收未做** |
+| 阻塞 / 风险 | 偏移链需在 B 机用 CE 核对；若 HP 不对优先改 yaml 而非 Python |
+| 活跃设备备注 | 转至 **设备 B** 验收 |
+| 最后更新 | 2026-07-23 |
 
 ### 完成清单（勾选）
 
@@ -80,8 +80,7 @@
 - [x] Cursor 工作区 Python 解释器 / Ruff / YAML 插件（B 机，2026-07-21）
 - [x] `probe_attach.py` 附加逻辑（A 机 PyCharm 冒烟；**B 机 HK 正式验收通过**，2026-07-21）
 - [x] Cheat Engine 7.7 已安装（B 机；Windows 用 `CheatEngine77.exe` 或 Patreon 版 `CheatEngine77P.exe`）
-- [ ] CE 基础操作熟练（官方教程 ≥1～5 关：附加进程、扫描、地址监视、改值）
-- [ ] 读 HP（CE 找偏移 → `game_version.yaml` → `probe_hp.py`）— 游戏内掉血数字同步变
+- [ ] 读 HP — **A 机代码已就绪，B 机待验收**（见 §3 验收清单）
 - [ ] 按键 / 重置×10 / `results/phase0.md`
 
 **设备 B — GPU 训练栈（可与 Phase 0 并行安装，训练待 Phase 1）**
@@ -89,7 +88,7 @@
 - [ ] Adrenalin（文档指定的 WSL2 版本）已装并重启
 - [ ] WSL2 + Ubuntu 22.04 或 24.04
 - [ ] ROCm + PyTorch（ROCm wheel）冒烟通过（见 §6.1）
-- [ ] 项目路径在 WSL 可访问（如 `/mnt/d/BossMind`）；训练热数据用 ext4 缓存（§6.1）
+- [ ] 项目路径在 WSL 可访问（如 `/mnt/e/BossMind`）；训练热数据用 ext4 缓存（§6.1）
 
 **Phase 1+**（未开始）
 
@@ -102,28 +101,35 @@
 
 ## 3. 下一步
 
-**先 `git pull`，读 §2，再动手；结束更新 §2/§3 并 `push`。**
+**B 机验收第 2 课（当前）**
 
-### 第 2 课：读玩家 HP（当前）
+```text
+cd /d E:\BossMind          # B 机项目路径
+conda activate BossMind
+pip install -e .           # 若尚未安装包
 
-| 设备 | 做什么 |
-|------|--------|
-| **B（当前）** | **先学 CE**：自带教程 1～5 关（附加进程、First/Next Scan、地址列表、改值）→ 再在 HK 里找 HP 偏移 → Pointer scan → 填入 `game_version.yaml` |
-| **A（可并行）** | 扩展 `memory.py`：`attach()` 保持连接、`read_player_hp()`；扩展 `game_version.yaml` 偏移字段；写 `scripts/probe_hp.py` 循环打印 |
-| **B（偏移就绪后）** | 与 A 联调：跑 `probe_hp` 验收（掉血/回血数字变；关游戏清晰失败） |
+# 1. 开空洞骑士，确认进程名与 yaml 一致
+python scripts\probe_attach.py
+# 期望：打印 pid，正常退出
 
-**B 机 CE 学习检查点**（做完即可开始找 HP）：
+# 2. 读 HP（Ctrl+C 退出）
+python scripts\probe_hp.py
+# 期望：打印合理 HP；受伤减少、回血增加
 
-1. 能附加 `hollow_knight.exe`
-2. 会用 4 Bytes 扫描 + Next Scan 缩小候选
-3. 能把地址加到下表，看到数值随游戏变化
-4. 知道 Pointer scan 是下一步（偏移链写 yaml）
+# 3. 关游戏再跑 probe_hp
+# 期望：清晰报错，不卡死
+```
 
-**验收**：`python scripts/probe_hp.py` 每秒打印 HP；受伤减少、治疗增加；关游戏清晰失败。
+**验收通过标准**
 
-**本课不做**：按键、读档、BC、CNN。
+- [ ] `probe_attach`：开 HK 成功 / 关 HK 失败  
+- [ ] `probe_hp`：数值与游戏 UI 一致，随受伤/回血变化  
+- [ ] CE 核对指针链与 `configs/game_version.yaml` 一致（不对则改 yaml）  
+- [ ] 通过后：勾选 §2 清单、写 `results/phase0.md` 简短记录、commit + push  
 
-**若在 B 且第 2 课已过**：进入第 3 课按键冒烟。
+**若第 2 课通过** → 第 3 课：按键注入（`input.py` + `probe_input.py`）
+
+**若在 A 机** → `git pull` 等 B 验收结果，或并行写第 3 课骨架（不在 A 验按键）
 
 ---
 
@@ -150,12 +156,12 @@ BossMind\
   configs\
     game_version.yaml         # process_name + 内存偏移（第 2 课起）
   scripts\
-    probe_attach.py           # 第 1 课：附加进程，打印 pid
-    probe_hp.py               # 第 2 课：循环读 HP（待建）
+    probe_attach.py           # 附加进程，打印 pid 后退出
+    probe_hp.py               # 循环读 HP（0.2s）
   src\bossmind\
     paths.py                  # PROJECT_ROOT、GAME_VERSION_FILE
     env_tools\
-      memory.py               # get_pid()；第 2 课扩展读内存
+      memory.py               # PlayerInfo：attach/detach/get_pid/get_player_hp
   data\  artifacts\  results\  # 后续阶段使用
 ```
 
@@ -498,12 +504,15 @@ mkdir -p ~/bossmind-train/{data,artifacts/runs}
 > 只记：阶段验收通过/失败、架构定稿、环境冒烟结果、求职向交付物。  
 > **不要**记录：文档措辞修改、依赖文件整理、重复澄清分工等。
 
+### 2026-07-23
+
+- Phase 0 **第 2 课 A 机代码就绪**：`PlayerInfo`（attach/detach/指针链/读 HP）+ `probe_attach` + `probe_hp`；待 **B 机正式验收**
+
 ### 2026-07-21
 
 - Phase 0 **第 1 课通过**（A 机）：`paths.py` + `env_tools/memory` + 可配置 `probe_attach`
 - Phase 0 **第 1 课 B 机正式验收通过**：开 HK 运行 `probe_attach` 可获取 PID
-- **设备 B** 环境就绪：`E:\BossMind`、conda 3.12.13、Cursor 工作区配置、**CE 7.7 已安装**
-- **进行中**：B 学习 CE 基础 → 第 2 课找 HP 偏移；`probe_hp` 代码待 A/B 编写
+- **设备 B** 环境就绪：`E:\BossMind`、conda 3.12.13、CE 7.7
 
 ---
 

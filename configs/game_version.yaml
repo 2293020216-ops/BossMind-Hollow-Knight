@@ -1,1 +1,8 @@
 process_name: hollow_knight.exe
+player_info:
+  module_base: UnityPlayer.dll
+  base_offset: 0x01F28838
+  offsets: [0x0, 0x0, 0x10, 0x18, 0x0, 0x60]
+  hp_offset: 0x198
+  hp_value_type: 当前仅int32，无需调整。
+  
