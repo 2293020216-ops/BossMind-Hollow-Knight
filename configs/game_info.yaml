@@ -5,4 +5,13 @@ player_info:
   offsets: [0x0, 0x0, 0x10, 0x18, 0x0, 0x60]
   hp_offset: 0x198
   hp_value_type: 当前仅int32，无需调整。
-  
+keybinds:
+  left: a
+  right: d
+  up: w
+  down: s
+  jump: space
+  attack: j
+  dash: lshift
+  heal: l
+  skill: k

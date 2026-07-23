@@ -21,7 +21,7 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
-ignore = ["UP015"]  # 允许 open(path, "r", ...) 显式写读取模式
+ignore = ["UP015", "I001"]  # UP015: 允许 open(..., "r"); I001: 不强制 import 排序
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

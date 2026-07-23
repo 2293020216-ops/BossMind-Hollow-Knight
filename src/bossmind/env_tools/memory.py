@@ -3,7 +3,7 @@ import logging
 import pymem
 import yaml
 
-from bossmind.paths import GAME_VERSION_FILE
+from bossmind.paths import GAME_INFO_FILE
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +26,10 @@ class PlayerInfo:
         用于加载配置文件，获取地址信息，并赋值给私有属性
         """
         # 校验配置文件是否存在
-        if not GAME_VERSION_FILE.exists():
-            raise FileNotFoundError(f"配置文件不存在: {GAME_VERSION_FILE}")
+        if not GAME_INFO_FILE.exists():
+            raise FileNotFoundError(f"配置文件不存在: {GAME_INFO_FILE}")
         # 读取配置文件，获取基址与血量偏移
-        with open(GAME_VERSION_FILE, "r", encoding="utf-8") as f:
+        with open(GAME_INFO_FILE, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
             self.__process_name = config["process_name"]
             player_info = config["player_info"]
@@ -74,17 +74,19 @@ class PlayerInfo:
         """
         try:
             # 获取基址地址
-            module_addr = pymem.process.module_from_name(pm, module_base).lpBaseOfDll
-            addr = module_addr + base_offset
+            module_addr = int(
+                pymem.process.module_from_name(pm.process_handle, module_base).lpBaseOfDll
+            )
+            addr = module_addr + int(base_offset)
             # 遍历偏移链
             for i, offset in enumerate(offsets):
                 # 先偏移地址，再读取8字节，获取指针。
-                addr = pm.read_longlong(addr + offset)
+                addr = int(pm.read_longlong(int(addr + int(offset))))
                 # 判断偏移链是否断裂
                 if addr == 0:
                     raise ValueError(f"偏移链断裂: {hex(addr)}，当前为第{i + 1}层")
             # 返回最终地址
-            return addr + final_offset
+            return int(addr) + int(final_offset)
         except Exception as e:
             raise ValueError(f"解析地址链失败: {e}")
 

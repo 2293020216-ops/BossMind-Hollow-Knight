@@ -59,10 +59,10 @@
 | 字段 | 值 |
 |------|-----|
 | 当前阶段 | **Phase 0 — 真环境探针** |
-| 当前子课 | **第 2 课：读玩家 HP — 待 B 机验收** |
-| 完成度 | A 机代码就绪：`PlayerInfo`（attach/detach/get_pid/get_player_hp）+ `probe_attach` + `probe_hp` + `game_version.yaml` 偏移已填；第 1 课 B 机已通过；**第 2 课 B 机真环境验收未做** |
-| 阻塞 / 风险 | 偏移链需在 B 机用 CE 核对；若 HP 不对优先改 yaml 而非 Python |
-| 活跃设备备注 | 转至 **设备 B** 验收 |
+| 当前子课 | **第 3 课：按键注入冒烟（probe_input）** |
+| 完成度 | 第 1 课 B 机已通过；第 2 课 A 机代码就绪，**B 机验收待补**；第 3 课进行中 |
+| 阻塞 / 风险 | 第 2 课未 B 验收前，偏移是否正确未知；第 3 课不依赖 HP 读数，可并行开发 |
+| 活跃设备备注 | 设备 A 开发第 3 课；B 机后续补第 2 课验收 |
 | 最后更新 | 2026-07-23 |
 
 ### 完成清单（勾选）
@@ -80,8 +80,9 @@
 - [x] Cursor 工作区 Python 解释器 / Ruff / YAML 插件（B 机，2026-07-21）
 - [x] `probe_attach.py` 附加逻辑（A 机 PyCharm 冒烟；**B 机 HK 正式验收通过**，2026-07-21）
 - [x] Cheat Engine 7.7 已安装（B 机；Windows 用 `CheatEngine77.exe` 或 Patreon 版 `CheatEngine77P.exe`）
-- [ ] 读 HP — **A 机代码已就绪，B 机待验收**（见 §3 验收清单）
-- [ ] 按键 / 重置×10 / `results/phase0.md`
+- [ ] 读 HP — A 机代码就绪，**B 机验收待补**
+- [ ] 按键注入冒烟（`probe_input.py`）— **当前**
+- [ ] 重置×10 / `results/phase0.md`
 
 **设备 B — GPU 训练栈（可与 Phase 0 并行安装，训练待 Phase 1）**
 
@@ -101,35 +102,32 @@
 
 ## 3. 下一步
 
-**B 机验收第 2 课（当前）**
+### 第 3 课：按键注入冒烟（当前）
+
+**目标**：脚本能让游戏角色执行一组预设按键（如右走 1 秒 → 跳 → 攻击），人眼可见。
+
+| 设备 | 做什么 |
+|------|--------|
+| **A** | 写 `src/bossmind/env_tools/input.py` + `scripts/probe_input.py`；动作枚举与 yaml 可配置（可选） |
+| **B** | 开 HK、窗口在前台 → 跑 `probe_input` 验收；与第 2 课 `probe_hp` 验收可同次完成 |
+
+**验收（B 机）**
 
 ```text
-cd /d E:\BossMind          # B 机项目路径
-conda activate BossMind
-pip install -e .           # 若尚未安装包
-
-# 1. 开空洞骑士，确认进程名与 yaml 一致
-python scripts\probe_attach.py
-# 期望：打印 pid，正常退出
-
-# 2. 读 HP（Ctrl+C 退出）
-python scripts\probe_hp.py
-# 期望：打印合理 HP；受伤减少、回血增加
-
-# 3. 关游戏再跑 probe_hp
-# 期望：清晰报错，不卡死
+python scripts\probe_input.py
+# 期望：角色明显移动/跳跃/攻击；脚本结束无异常
 ```
 
-**验收通过标准**
+**本课不做**：读档重置、BC、复杂连招。
 
-- [ ] `probe_attach`：开 HK 成功 / 关 HK 失败  
-- [ ] `probe_hp`：数值与游戏 UI 一致，随受伤/回血变化  
-- [ ] CE 核对指针链与 `configs/game_version.yaml` 一致（不对则改 yaml）  
-- [ ] 通过后：勾选 §2 清单、写 `results/phase0.md` 简短记录、commit + push  
+**B 机待补**：第 2 课 `probe_hp` 验收（见 §3 附录）。
 
-**若第 2 课通过** → 第 3 课：按键注入（`input.py` + `probe_input.py`）
+### §3 附录 — 第 2 课 B 机验收（待补）
 
-**若在 A 机** → `git pull` 等 B 验收结果，或并行写第 3 课骨架（不在 A 验按键）
+```text
+python scripts\probe_attach.py
+python scripts\probe_hp.py
+```
 
 ---
 
@@ -151,27 +149,24 @@ Phase 2–5 逻辑 → A 或 B 都可写；凡需 HK/GPU 的跑通与出数 → 
 ```text
 BossMind\
   AGENTS.md
-  pyproject.toml              # pip install -e .
-  requirements.txt            # Python 3.12
-  configs\
-    game_version.yaml         # process_name + 内存偏移（第 2 课起）
+  pyproject.toml
+  requirements.txt
+  configs\game_version.yaml
   scripts\
-    probe_attach.py           # 附加进程，打印 pid 后退出
-    probe_hp.py               # 循环读 HP（0.2s）
+    probe_attach.py
+    probe_hp.py
+    probe_input.py            # 第 3 课（待建）
   src\bossmind\
-    paths.py                  # PROJECT_ROOT、GAME_VERSION_FILE
+    paths.py
     env_tools\
-      memory.py               # PlayerInfo：attach/detach/get_pid/get_player_hp
-  data\  artifacts\  results\  # 后续阶段使用
+      memory.py
+      input.py                # 第 3 课（待建）
+  data\  artifacts\  results\
 ```
 
-**安装**：`pip install -e .` 后 `from bossmind.env_tools.memory import ...`
-
-WSL 训练缓存：`~/bossmind-train/`（见 §6.2，Phase 1 再用）。
+**安装**：`pip install -e .`
 
 ---
-
-## 6. 技术栈备忘
 
 | 场景 | 哪里跑 | 栈 |
 |------|--------|-----|

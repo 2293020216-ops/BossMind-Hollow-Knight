@@ -6,4 +6,4 @@ PROJECT_ROOT = PACKAGE_DIR.parent.parent
 
 CONFIGS_DIR = PROJECT_ROOT / "configs"
 
-GAME_VERSION_FILE = CONFIGS_DIR / "game_version.yaml"
+GAME_INFO_FILE = CONFIGS_DIR / "game_info.yaml"
